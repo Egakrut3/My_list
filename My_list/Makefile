@@ -35,8 +35,6 @@ all : prepare $(call make_bin_path, $(OBJ))
 prepare :
 	@mkdir -p ./bin/
 
-$(call make_object, Common)
-
 $(call make_object, My_list_basic)
 
 $(call make_object, My_list_functions)

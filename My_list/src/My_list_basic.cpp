@@ -256,3 +256,67 @@ errno_t My_list_dump(FILE *const out_stream, My_list const *const list_ptr,
     CLEAR_RESOURCES();
     return 0;
 }
+
+errno_t My_list_vizual_dump(My_list const *const list_ptr) {
+    assert(list_ptr);
+
+    #undef FINAL_CODE
+    #define FINAL_CODE
+
+    FILE *out_stream = nullptr;
+    CHECK_FUNC(fopen_s, &out_stream, "DOT_file.txt", "w");
+    #undef FINAL_CODE
+    #define FINAL_CODE  \
+        fclose(out_stream);
+
+    fprintf_s(out_stream, "digraph {\n");
+    fprintf_s(out_stream, "\trankdir = LR\n");
+    fprintf_s(out_stream, "\tnode [style = rounded]\n");
+
+    fprintf_s(out_stream, "\tnode0 [shape=record, label=\""
+                          "{HOST} | "
+                          "{TAIL=%zd | HEAD=%zd} | "
+                          "{CANARY=" LIST_ELEM_FRM "}"
+                          "\"]\n",
+                          list_ptr->buffer[0].prev, list_ptr->buffer[0].next, list_ptr->buffer[0].val);
+    for (size_t i = 1; i < list_ptr->capacity; ++i) {
+        fprintf_s(out_stream, "\tnode%zu [shape=record, label=\""
+                              "{idx=%zu} | "
+                              "{prev=%zd | next=%zd} | "
+                              "{val=" LIST_ELEM_FRM "}"
+                              "\"]\n",
+                  i, i, list_ptr->buffer[i].prev, list_ptr->buffer[i].next, list_ptr->buffer[i].val);
+    }
+
+    fprintf_s(out_stream, "\t");
+    for (size_t i = 0; i < list_ptr->capacity - 1; ++i) {
+        fprintf_s(out_stream, "node%zu -> ", i);
+    }
+    fprintf_s(out_stream, "node%zu [color=white]\n", list_ptr->capacity - 1);
+
+    fprintf_s(out_stream, "\t{rank=same; FIRST_EMPTY; node%zu; }\n", list_ptr->first_empty);
+    for (size_t i = 0; i < list_ptr->capacity; ++i) {
+        if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
+            fprintf_s(out_stream, "\tnode%zu -> node%zu [color=green, constraint=false]\n",
+                      i, list_ptr->buffer[i].next);
+        }
+    }
+
+    for (size_t i = 0; i < list_ptr->capacity; ++i) {
+        if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+            fprintf_s(out_stream, "\tnode%zu -> node%zu [color=red, constraint=false]\n",
+                      i, list_ptr->buffer[i].prev);
+        }
+    }
+    fprintf_s(out_stream, "\n}");
+
+    fclose(out_stream);
+
+    #undef FINAL_CODE
+    #define FINAL_CODE
+
+    system("dot -Tpng DOT_file.txt > DOT_output.png"); //TODO - how to change filename
+
+    CLEAR_RESOURCES();
+    return 0;
+}

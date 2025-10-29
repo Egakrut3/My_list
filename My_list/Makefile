@@ -33,11 +33,11 @@ all : prepare $(call make_bin_path, $(OBJ))
 	@echo Compilation end
 
 prepare :
-	@mkdir -p ./bin/
+	@mkdir -p $(BIN_DIR) $(LIB_DIR)
 
 $(call make_object, My_list_basic)
 
 $(call make_object, My_list_functions)
 
 clean:
-	@rm -rf ./bin/
+	@rm -rf $(BIN_DIR)

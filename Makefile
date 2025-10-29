@@ -8,8 +8,8 @@ make_src_path = $(addprefix $(SRC_DIR), $(addsuffix $(SRC_SUF), $(1)))
 
 H_DIR = ./include/ ./My_list/include/
 
-LIB_DIR = static_libs/
-LIBS = Colored_printf My_list
+LIB_DIR = ./static_libs/
+LIBS = Colored_printf File_input My_list
 
 CXX = g++
 CXX_FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline   \
@@ -20,9 +20,9 @@ CXX_FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-
 -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel -Wtype-limits           \
 -Wwrite-strings -Werror=vla -D_EJUDGE_CLIENT_SIDE -D__USE_MINGW_ANSI_STDIO -D_DEBUG
 
-TARGET = $(addprefix ./bin/, Test.exe)
+TARGET = $(addprefix $(BIN_DIR), Test.exe)
 
-OBJ = My_functions File_input Option_manager main
+OBJ = My_functions Option_manager main
 
 make_object = $(call make_bin_path, $(1)) : $(call make_src_path, $(1)); \
 @$(CXX) $(CXX_FLAGS) -c $$< $(addprefix -I, $(H_DIR)) -o $$@
@@ -38,11 +38,9 @@ test : all
 
 prepare :
 	@make -C ./My_list/
-	@mkdir -p ./bin/
+	@mkdir -p $(BIN_DIR)
 
 $(call make_object, My_functions)
-
-$(call make_object, File_input)
 
 $(call make_object, Option_manager)
 
@@ -50,4 +48,4 @@ $(call make_object, main)
 
 clean:
 	@make clean -C ./My_list/
-	@rm -rf ./bin/
+	@rm -rf (BIN_DIR)

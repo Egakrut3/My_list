@@ -1,9 +1,10 @@
 #include "Common.h"
 #include "Option_manager.h"
 #include "My_list.h"
+//TODO - possible make error handling by writing error by pointer
 
 int main(int const argc, char const *const *const argv) {
-    assert(argc > 0); assert(argv); assert(*argv);
+    assert(argc > 0); assert(argv);
 
     #undef FINAL_CODE
     #define FINAL_CODE
@@ -25,14 +26,23 @@ int main(int const argc, char const *const *const argv) {
            pos3 = 0,
            pos4 = 0,
            pos5 = 0;
-    MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos1, 0, 1);
-    MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos2, pos1, 2);
-    MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos3, pos2, 3);
-    MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos4, pos3, 4);
-    MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos5, pos4, 5);
-    MAIN_CHECK_FUNC(My_list_erase, &cur_list, pos2);
-    //MAIN_CHECK_FUNC(My_list_insert, &cur_list, &pos2, pos3, 20);
-    My_list_vizual_dump(&cur_list);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos1, 0, 1);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos1, 2);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos3, pos2, 3);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos4, pos3, 4);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos5, pos4, 5);
+    MAIN_CHECK_FUNC(My_list_erase,         &cur_list, pos2);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos3, 20);
+
+    FILE *dump_stream = nullptr;
+    MAIN_CHECK_FUNC(fopen_s, &dump_stream, "./Visual_html/List_log.html", "w");
+    #undef FINAL_CODE
+    #define FINAL_CODE              \
+        Config_Dtor(&cur_config);   \
+        My_list_Dtor(&cur_list);    \
+        fclose(dump_stream);
+        
+    My_list_visual_dump(&cur_list, dump_stream, Position_info{__FILE__, __func__, __LINE__});
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");
     CLEAR_RESOURCES();

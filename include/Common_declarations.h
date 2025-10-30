@@ -55,7 +55,6 @@ struct Position_info {
                *function_name;
     size_t     line;
 };
-
 struct Var_info {
     Position_info position;
     char const    *name;

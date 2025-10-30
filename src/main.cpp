@@ -32,7 +32,7 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos4, pos3, 4);
     MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos5, pos4, 5);
     MAIN_CHECK_FUNC(My_list_erase,         &cur_list, pos2);
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos3, 20);
+    //MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos3, 20);
 
     FILE *dump_stream = nullptr;
     MAIN_CHECK_FUNC(fopen_s, &dump_stream, "./Visual_html/List_log.html", "w");
@@ -41,8 +41,8 @@ int main(int const argc, char const *const *const argv) {
         Config_Dtor(&cur_config);   \
         My_list_Dtor(&cur_list);    \
         fclose(dump_stream);
-        
-    My_list_visual_dump(&cur_list, dump_stream, Position_info{__FILE__, __func__, __LINE__});
+
+    LIST_VISUAL_DUMP(cur_list, dump_stream, MAIN_CHECK_FUNC);
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");
     CLEAR_RESOURCES();

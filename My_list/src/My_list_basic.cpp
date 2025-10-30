@@ -272,56 +272,159 @@ errno_t My_list_visual_dump(My_list const *const list_ptr, FILE *const out_strea
     }
     else {
         FILE *dot_stream = nullptr;
-        CHECK_FUNC(fopen_s, &dot_stream, "./Visual_html/DOT_file.txt", "w"); //TODO - how to change filename
+        #define DOT_FILE_PATH "./Visual_html/DOT_file.txt"
+        CHECK_FUNC(fopen_s, &dot_stream, DOT_FILE_PATH, "w");
+
+        char const background_color[] = "white"; //TODO -
 
         fprintf_s(dot_stream, "digraph {\n");
         fprintf_s(dot_stream, "\trankdir = LR\n");
-        fprintf_s(dot_stream, "\tnode [style = rounded]\n");
+        fprintf_s(dot_stream, "\tnode [shape = plaintext]\n");
 
-        fprintf_s(dot_stream, "\tnode0 [shape=record, label=\""
-                              "{HOST} | "
-                              "{TAIL=%zd | HEAD=%zd} | "
-                              "{CANARY=" LIST_ELEM_FRM "}"
-                              "\"]\n",
-                              list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
-                              list_ptr->buffer[0].val);
-        for (size_t i = 1; i < list_ptr->capacity; ++i) {
-            fprintf_s(dot_stream, "\tnode%zu [shape=record, label=\""
-                                  "{idx=%zu} | "
-                                  "{prev=%zd | next=%zd} | "
-                                  "{val=" LIST_ELEM_FRM "}"
-                                  "\"]\n",
-                                  i, i,
-                                  list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
-                                  list_ptr->buffer[i].val);
+        //TODO - is %zd a good practice?
+        if (verify_err & LIST_INVALID_STRUCTURE) {
+            fprintf_s(dot_stream, "\tnode0 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                           "<TR><TD COLSPAN=\"2\" PORT=\"top\">HOST</TD></TR>"
+                                           "<TR><TD PORT=\"prev\">TAIL = %zd</TD>"
+                                               "<TD PORT=\"next\">HEAD = %zd</TD></TR>"
+                                           "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                "CANARY = " LIST_ELEM_FRM "</TD></TR>"
+                                           "</TABLE>>]\n",
+                                  list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
+                                  list_ptr->buffer[0].val);
+            for (size_t i = 1; i < list_ptr->capacity; ++i) {
+                if (i == list_ptr->first_empty) {
+                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\">"
+                                                         "FIRST EMPTY</TD></TR>"
+                                                     "<TR><TD COLSPAN=\"2\">idx = %zu</TD></TR>"
+                                                     "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                         "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                     "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                         "val = " LIST_ELEM_FRM "</TD></TR>"
+                                                     "</TABLE>>]\n",
+                                          i, i,
+                                          list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
+                                          list_ptr->buffer[i].val);
+                }
+                else {
+                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                                     "<TR><TD PORT=\"top\" COLSPAN=\"2\">"
+                                                         "idx = %zu</TD></TR>"
+                                                     "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                         "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                     "<TR><TD PORT=\"bottom\" COLSPAN=\"2\">"
+                                                         "val = " LIST_ELEM_FRM "</TD></TR>"
+                                                     "</TABLE>>]\n",
+                                          i, i,
+                                          list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
+                                          list_ptr->buffer[i].val);
+                }
+            }
+        }
+        else {
+            if (list_ptr->first_empty != MY_LIST_UNAVIABLE_IDX) {
+                fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                                 "<TR><TD COLSPAN=\"2\" PORT=\"top\">"
+                                                     "FIRST EMPTY</TD></TR>"
+                                                 "<TR><TD COLSPAN=\"2\">idx = %zu</TD></TR>"
+                                                 "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                     "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                 "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                     "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
+                                                 "</TABLE>>]\n",
+                                      list_ptr->first_empty, list_ptr->first_empty,
+                                      list_ptr->buffer[list_ptr->first_empty].prev,
+                                      list_ptr->buffer[list_ptr->first_empty].next,
+                                      list_ptr->buffer[list_ptr->first_empty].val);
+
+                for (size_t i = list_ptr->buffer[list_ptr->first_empty].next; i != MY_LIST_UNAVIABLE_IDX;
+                            i = list_ptr->buffer[i].next) {
+                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\">"
+                                                         "idx = %zu</TD></TR>"
+                                                     "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                         "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                     "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                         "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
+                                                     "</TABLE>>]\n",
+                                          i, i,
+                                          list_ptr->buffer[i].prev,
+                                          list_ptr->buffer[i].next,
+                                          list_ptr->buffer[i].val);
+                }
+            }
+
+            fprintf_s(dot_stream, "\tnode0 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                           "<TR><TD COLSPAN=\"2\" PORT=\"top\">HOST</TD></TR>"
+                                           "<TR><TD PORT=\"prev\">TAIL = %zd</TD>"
+                                               "<TD PORT=\"next\">HEAD = %zd</TD></TR>"
+                                           "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                "CANARY = " LIST_ELEM_FRM "</TD></TR>"
+                                           "</TABLE>>]\n",
+                                  list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
+                                  list_ptr->buffer[0].val);
+            for (size_t i = list_ptr->buffer[0].next; i != 0; i = list_ptr->buffer[i].next) {
+                fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
+                                                 "<TR><TD PORT=\"top\" COLSPAN=\"2\">"
+                                                     "idx = %zu</TD></TR>"
+                                                 "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                     "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                 "<TR><TD PORT=\"bottom\" COLSPAN=\"2\">"
+                                                     "val = " LIST_ELEM_FRM "</TD></TR>"
+                                                 "</TABLE>>]\n",
+                                      i, i,
+                                      list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
+                                      list_ptr->buffer[i].val);
+            }
         }
 
-        fprintf_s(dot_stream, "\t");
         for (size_t i = 0; i < list_ptr->capacity - 1; ++i) {
-            fprintf_s(dot_stream, "node%zu -> ", i);
+            fprintf_s(dot_stream, "\tnode%zu -> node%zu [color = %s]\n", i, i + 1, background_color);
         }
-        fprintf_s(dot_stream, "node%zu [color=white]\n", list_ptr->capacity - 1);
 
-        fprintf_s(dot_stream, "\t{rank=same; FIRST_EMPTY; node%zu; }\n", list_ptr->first_empty);
-        for (size_t i = 0; i < list_ptr->capacity; ++i) {
-            if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
-                fprintf_s(dot_stream, "\tnode%zu -> node%zu [color=green, constraint=false]\n",
-                                      i, list_ptr->buffer[i].next);
+        if (verify_err & LIST_INVALID_STRUCTURE) {
+            for (size_t i = 0; i < list_ptr->capacity; ++i) {
+                if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
+                    fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:top"
+                                          "[color = green, constraint = false]\n",
+                                          i, list_ptr->buffer[i].next);
+                }
+            }
+
+            for (size_t i = 0; i < list_ptr->capacity; ++i) {
+                if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+                    fprintf_s(dot_stream, "\tnode%zu:prev -> node%zu:bottom"
+                                          "[color = red, constraint = false]\n",
+                                          i, list_ptr->buffer[i].prev);
+                }
+            }
+        }
+        else { //TODO -
+            for (size_t i = 0; i < list_ptr->capacity; ++i) {
+                if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
+                    fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:top"
+                                          "[color = green, constraint = false]\n",
+                                          i, list_ptr->buffer[i].next);
+                }
+            }
+
+            for (size_t i = 0; i < list_ptr->capacity; ++i) {
+                if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+                    fprintf_s(dot_stream, "\tnode%zu:prev -> node%zu:bottom"
+                                          "[color = red, constraint = false]\n",
+                                          i, list_ptr->buffer[i].prev);
+                }
             }
         }
 
-        for (size_t i = 0; i < list_ptr->capacity; ++i) {
-            if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
-                fprintf_s(dot_stream, "\tnode%zu -> node%zu [color=red, constraint=false]\n",
-                                      i, list_ptr->buffer[i].prev);
-            }
-        }
-        fprintf_s(dot_stream, "\n}");
+        fprintf_s(dot_stream, "}");
 
         fclose(dot_stream);
-        system("dot -Tpng ./Visual_html/DOT_file.txt > ./Visual_html/DOT_output.png");
+        #define DOT_OUTPUT_NAME "DOT_output.png"
+        system("dot -Tpng " DOT_FILE_PATH " > ./Visual_html/" DOT_OUTPUT_NAME); //TODO - how to change filename
 
-        fprintf_s(out_stream, "\t<img src=\"./DOT_output.png\" width=1500/>\n");
+        fprintf_s(out_stream, "\t<img src=\" " DOT_OUTPUT_NAME "\" width=1500/>\n");
     }
 
     fprintf_s(out_stream, "\tfirst_empty = %zu\n", list_ptr->first_empty);

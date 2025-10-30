@@ -26,13 +26,13 @@ int main(int const argc, char const *const *const argv) {
            pos3 = 0,
            pos4 = 0,
            pos5 = 0;
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos1, 0, 1);
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos1, 2);
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos3, pos2, 3);
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos4, pos3, 4);
-    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos5, pos4, 5);
-    MAIN_CHECK_FUNC(My_list_erase,         &cur_list, pos2);
-    //MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos3, 20);
+    MAIN_CHECK_FUNC(My_list_insert_after, &cur_list, &pos1, 0, 1);
+    MAIN_CHECK_FUNC(My_list_insert_after, &cur_list, &pos2, pos1, 2);
+    MAIN_CHECK_FUNC(My_list_insert_after, &cur_list, &pos3, pos2, 3);
+    MAIN_CHECK_FUNC(My_list_insert_after, &cur_list, &pos4, pos3, 4);
+    MAIN_CHECK_FUNC(My_list_insert_after, &cur_list, &pos5, pos4, 5);
+    MAIN_CHECK_FUNC(My_list_erase,        &cur_list, pos2);
+    MAIN_CHECK_FUNC(My_list_insert_before, &cur_list, &pos2, pos4, 20);
 
     FILE *dump_stream = nullptr;
     MAIN_CHECK_FUNC(fopen_s, &dump_stream, "./Visual_html/List_log.html", "w");

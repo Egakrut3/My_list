@@ -237,31 +237,31 @@ errno_t My_list_visual_dump(My_list const *const list_ptr, FILE *const out_strea
 
     fprintf_s(out_stream, "<pre>\n");
 
-    fprintf_s(out_stream, "called at file %s, line %zu in \"%s\" function: ",
+    fprintf_s(out_stream, "called at file %s, line %zu in \"%s\" function for reasons of:\n",
                           from_where.file_name, from_where.line, from_where.function_name);
 
     if (!verify_err) {
-        fprintf_s(out_stream, "No error");
+        fprintf_s(out_stream, "\tNo error\n");
     }
 
     if (verify_err & LIST_INVALID) {
-        fprintf_s(out_stream, "List is invalid    ");
+        fprintf_s(out_stream, "\nList is invalid\n");
     }
 
     if (verify_err & LIST_SMALL_CAPACITY) {
-        fprintf_s(out_stream, "List capacity is too small    ");
+        fprintf_s(out_stream, "\nList capacity is too small\n");
     }
 
     if (verify_err & LIST_INVALID_BUFFER) {
-        fprintf_s(out_stream, "List has invalid buffer    ");
+        fprintf_s(out_stream, "\tList has invalid buffer\n");
     }
 
     if (verify_err & LIST_INVALID_STRUCTURE) {
-        fprintf_s(out_stream, "List has invalid structure    ");
+        fprintf_s(out_stream, "\tList has invalid structure\n");
     }
 
     if (verify_err & LIST_BUFFER_CANARY_SPOILED) {
-        fprintf_s(out_stream, "List buffer canary spoiled    ");
+        fprintf_s(out_stream, "\tList buffer canary spoiled\n");
     }
 
     fprintf_s(out_stream, "\nlist<" LIST_ELEM_STR ">[%p]"
@@ -284,127 +284,96 @@ errno_t My_list_visual_dump(My_list const *const list_ptr, FILE *const out_strea
         CHECK_FUNC(fopen_s, &dot_stream, DOT_FILE_PATH, "w");
 
         char const background_color[]     = "white",
+
+                   border_color[]         = "black",
+
                    empty_arrow_color[]    = "violet",
                    toward_arrow_color[]   = "green",
-                   backward_arrow_color[] = "red",
+                   backward_arrow_color[] = "deeppink", //TODO -
+                   common_arrow_color[]   = "blue",
+
                    first_empty_color[]    = "violet",
-                   empty_color[]          = "yellow",
+                   empty_color[]          = "green",
                    host_color[]           = "orange",
-                   common_color[]         = "white"; //TODO - 
+                   active_color[]         = "yellow";
+
+        double const small_fraction = 0.001;
 
         fprintf_s(dot_stream, "digraph {\n");
         fprintf_s(dot_stream, "\trankdir = LR\n");
-        fprintf_s(dot_stream, "\tnode [shape = plaintext]\n");
+        fprintf_s(dot_stream, "\tnode [shape = octagon style = filled fillcolor = red "
+                              "height = 1.5 width = 2.0]\n"); //TODO - make bolder
+        fprintf_s(dot_stream, "\tedge [color = red penwidth = 3.0]\n");
         fprintf_s(dot_stream, "\tbgcolor = \"%s\"\n", background_color);
 
+        fprintf_s(dot_stream, "\tnode26 -> node27\n");
+
         //TODO - is %zd a good practice?
-        if (verify_err & LIST_INVALID_STRUCTURE) {
-            fprintf_s(dot_stream, "\tnode0 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
-                                           "<TR><TD COLSPAN=\"2\" PORT=\"top\" "
-                                                   "BGCOLOR=\"%s\">HOST</TD></TR>"
-                                           "<TR><TD PORT=\"prev\">TAIL = %zd</TD>"
-                                               "<TD PORT=\"next\">HEAD = %zd</TD></TR>"
-                                           "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
-                                                "CANARY = " LIST_ELEM_FRM "</TD></TR>"
-                                           "</TABLE>>]\n",
-                                  host_color,
-                                  list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
-                                  list_ptr->buffer[0].val);
-            for (size_t i = 1; i < list_ptr->capacity; ++i) {
-                if (i == list_ptr->first_empty) {
-                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
-                                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\" "
-                                                             "BGCOLOR=\"%s\">"
+        for (size_t i = 0; i < list_ptr->capacity; ++i) {
+            if (i == 0) {
+                fprintf_s(dot_stream, "\tnode0 [shape = plaintext color = %s style = \"\" "
+                                               "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                                                               "BGCOLOR=\"%s\">"
+                                               "<TR><TD COLSPAN=\"2\" PORT=\"top\">HOST</TD></TR>"
+                                               "<TR><TD PORT=\"prev\">TAIL = %zd</TD>"
+                                                   "<TD PORT=\"next\">HEAD = %zd</TD></TR>"
+                                               "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                       "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
+                                               "</TABLE>>]\n",
+                                      border_color, host_color,
+                                      list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
+                                      list_ptr->buffer[0].val);
+            }
+            else if (i == list_ptr->first_empty) {
+                    fprintf_s(dot_stream, "\tnode%zu [shape = plaintext color = %s style = \"\" "
+                                                     "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                                                                     "BGCOLOR=\"%s\">"
+                                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\" BGCOLOR=\"%s\">"
                                                          "FIRST EMPTY</TD></TR>"
                                                      "<TR><TD COLSPAN=\"2\">idx = %zu</TD></TR>"
                                                      "<TR><TD PORT=\"prev\">prev = %zd</TD>"
                                                          "<TD PORT=\"next\">next = %zd</TD></TR>"
                                                      "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
-                                                         "val = " LIST_ELEM_FRM "</TD></TR>"
+                                                         "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
                                                      "</TABLE>>]\n",
-                                          i,
-                                          first_empty_color,
-                                          i,
-                                          list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
-                                          list_ptr->buffer[i].val);
-                }
-                else {
-                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\">"
-                                                     "<TR><TD PORT=\"top\" COLSPAN=\"2\">"
-                                                         "idx = %zu</TD></TR>"
-                                                     "<TR><TD PORT=\"prev\">prev = %zd</TD>"
-                                                         "<TD PORT=\"next\">next = %zd</TD></TR>"
-                                                     "<TR><TD PORT=\"bottom\" COLSPAN=\"2\">"
-                                                         "val = " LIST_ELEM_FRM "</TD></TR>"
-                                                     "</TABLE>>]\n",
-                                          i, i,
-                                          list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
-                                          list_ptr->buffer[i].val);
-                }
-            }
-        }
-        else {
-            if (list_ptr->first_empty != MY_LIST_UNAVIABLE_IDX) {
-                fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
-                                                               "BGCOLOR=\"%s\">"
-                                                 "<TR><TD COLSPAN=\"2\" PORT=\"top\" BGCOLOR=\"%s\">"
-                                                     "FIRST EMPTY</TD></TR>"
-                                                 "<TR><TD COLSPAN=\"2\">idx = %zu</TD></TR>"
-                                                 "<TR><TD PORT=\"prev\">prev = %zd</TD>"
-                                                     "<TD PORT=\"next\">next = %zd</TD></TR>"
-                                                 "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
-                                                     "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
-                                                 "</TABLE>>]\n",
                                       list_ptr->first_empty,
-                                      empty_color, first_empty_color,
+                                      border_color, empty_color, first_empty_color,
                                       list_ptr->first_empty,
                                       list_ptr->buffer[list_ptr->first_empty].prev,
                                       list_ptr->buffer[list_ptr->first_empty].next,
                                       list_ptr->buffer[list_ptr->first_empty].val);
-
-                for (size_t i = list_ptr->buffer[list_ptr->first_empty].next; i != MY_LIST_UNAVIABLE_IDX;
-                            i = list_ptr->buffer[i].next) {
-                    fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
-                                                                   "BGCOLOR=\"%s\">"
-                                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\">"
-                                                         "idx = %zu</TD></TR>"
-                                                     "<TR><TD PORT=\"prev\">prev = %zd</TD>"
-                                                         "<TD PORT=\"next\">next = %zd</TD></TR>"
-                                                     "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
-                                                         "CANARY = " LIST_ELEM_FRM "(Poison)</TD></TR>"
-                                                     "</TABLE>>]\n",
-                                          i,
-                                          empty_color,
-                                          i,
-                                          list_ptr->buffer[i].prev,
-                                          list_ptr->buffer[i].next,
-                                          list_ptr->buffer[i].val);
-                }
             }
-
-            fprintf_s(dot_stream, "\tnode0 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" BGCOLOR=\"%s\">"
-                                           "<TR><TD COLSPAN=\"2\" PORT=\"top\" "
-                                                   "BGCOLOR=\"%s\">HOST</TD></TR>"
-                                           "<TR><TD PORT=\"prev\">TAIL = %zd</TD>"
-                                               "<TD PORT=\"next\">HEAD = %zd</TD></TR>"
-                                           "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
-                                                "CANARY = " LIST_ELEM_FRM "</TD></TR>"
-                                           "</TABLE>>]\n",
-                                  common_color, host_color,
-                                  list_ptr->buffer[0].prev, list_ptr->buffer[0].next,
-                                  list_ptr->buffer[0].val);
-            for (size_t i = list_ptr->buffer[0].next; i != 0; i = list_ptr->buffer[i].next) {
-                fprintf_s(dot_stream, "\tnode%zu [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
-                                                               "BGCOLOR=\"%s\">"
+            else if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+                fprintf_s(dot_stream, "\tnode%zu [shape = plaintext color = %s style = \"\" "
+                                                 "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                                                                 "BGCOLOR=\"%s\">"
+                                                 "<TR><TD COLSPAN=\"2\" PORT=\"top\">"
+                                                     "idx = %zu</TD></TR>"
+                                                 "<TR><TD PORT=\"prev\">prev = %zd</TD>"
+                                                     "<TD PORT=\"next\">next = %zd</TD></TR>"
+                                                 "<TR><TD COLSPAN=\"2\" PORT=\"bottom\">"
+                                                     "CANARY = " LIST_ELEM_FRM "</TD></TR>"
+                                                 "</TABLE>>]\n",
+                                        i,
+                                        border_color, active_color,
+                                        i,
+                                        list_ptr->buffer[i].prev,
+                                        list_ptr->buffer[i].next,
+                                        list_ptr->buffer[i].val);
+            }
+            else {
+                fprintf_s(dot_stream, "\tnode%zu [shape = plaintext color = %s style = \"\" "
+                                                 "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                                                                 "BGCOLOR=\"%s\">"
                                                  "<TR><TD PORT=\"top\" COLSPAN=\"2\">"
                                                      "idx = %zu</TD></TR>"
                                                  "<TR><TD PORT=\"prev\">prev = %zd</TD>"
                                                      "<TD PORT=\"next\">next = %zd</TD></TR>"
                                                  "<TR><TD PORT=\"bottom\" COLSPAN=\"2\">"
-                                                     "val = " LIST_ELEM_FRM "</TD></TR>"
+                                                     "val = " LIST_ELEM_FRM "(Poison)</TD></TR>"
                                                  "</TABLE>>]\n",
                                       i,
-                                      common_color,
+                                      border_color, empty_color,
                                       i,
                                       list_ptr->buffer[i].prev, list_ptr->buffer[i].next,
                                       list_ptr->buffer[i].val);
@@ -412,54 +381,53 @@ errno_t My_list_visual_dump(My_list const *const list_ptr, FILE *const out_strea
         }
 
         for (size_t i = 0; i < list_ptr->capacity - 1; ++i) {
-            fprintf_s(dot_stream, "\tnode%zu -> node%zu [color = %s]\n", i, i + 1, background_color);
+            fprintf_s(dot_stream, "\tnode%zu -> node%zu [color = %s "
+                                  "penwidth = 0.0 "
+                                  "arrowsize = 0.0]\n",
+                                  i, i + 1, background_color);
         }
 
-        if (verify_err & LIST_INVALID_STRUCTURE) {
-            for (size_t i = 0; i < list_ptr->capacity; ++i) {
-                if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
+        for (size_t i = 0; i < list_ptr->capacity; ++i) {
+            if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+                if (list_ptr->buffer[i].next < list_ptr->capacity and
+                    list_ptr->buffer[list_ptr->buffer[i].next].prev == i) {
+                    //TODO - odd colorizing
+                    fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:prev"
+                                          "[dir = both color = \"%s;%lG:%s:%s;%LG\" "
+                                          "constraint = false]\n",
+                                          i, list_ptr->buffer[i].next,
+                                          backward_arrow_color, small_fraction,
+                                          common_arrow_color,
+                                          toward_arrow_color, small_fraction);
+                }
+                else {
                     fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:top"
-                                          "[color = %s, constraint = false]\n",
+                                          "[color = %s penwidth = 3.0 constraint = false]\n",
                                           i, list_ptr->buffer[i].next, toward_arrow_color);
                 }
 
-                if (list_ptr->buffer[i].prev != MY_LIST_UNAVIABLE_IDX) {
+                if (list_ptr->buffer[i].prev < list_ptr->capacity and
+                    list_ptr->buffer[list_ptr->buffer[i].prev].next == i) {
+                    continue;
+                }
+                else {
                     fprintf_s(dot_stream, "\tnode%zu:prev -> node%zu:bottom"
-                                          "[color = %s, constraint = false]\n",
+                                          "[color = %s penwidth = 3.0 constraint = false]\n",
                                           i, list_ptr->buffer[i].prev, backward_arrow_color);
                 }
             }
-        }
-        else {
-            for (size_t i = list_ptr->first_empty; i != MY_LIST_UNAVIABLE_IDX and
-                            list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX;
-                        i = list_ptr->buffer[i].next) {
-                fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:top"
-                                      "[color = %s, constraint = false]\n",
+            else if (list_ptr->buffer[i].next != MY_LIST_UNAVIABLE_IDX) {
+                fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:prev"
+                                      "[color = %s constraint = false]\n",
                                       i, list_ptr->buffer[i].next, empty_arrow_color);
-            }
-
-            fprintf_s(dot_stream, "\tnode0:next -> node%zu:top"
-                                  "[color = %s, constraint = false]\n",
-                                  list_ptr->buffer[0].next, toward_arrow_color);
-            fprintf_s(dot_stream, "\tnode0:prev -> node%zu:bottom"
-                                  "[color = %s, constraint = false]\n",
-                                  list_ptr->buffer[0].prev, backward_arrow_color);
-            for (size_t i = list_ptr->buffer[0].next; i != 0; i = list_ptr->buffer[i].next) {
-                fprintf_s(dot_stream, "\tnode%zu:next -> node%zu:top"
-                                      "[color = %s, constraint = false]\n",
-                                      i, list_ptr->buffer[i].next, toward_arrow_color);
-                fprintf_s(dot_stream, "\tnode%zu:prev -> node%zu:bottom"
-                                      "[color = %s, constraint = false]\n",
-                                      i, list_ptr->buffer[i].prev, backward_arrow_color);
             }
         }
 
         fprintf_s(dot_stream, "}");
 
         fclose(dot_stream);
-        #define DOT_OUTPUT_NAME "DOT_output.png"
-        system("dot -Tpng " DOT_FILE_PATH " > ./Visual_html/" DOT_OUTPUT_NAME); //TODO - how to change filename
+        #define DOT_OUTPUT_NAME "DOT_output.svg"
+        system("dot -Tsvg " DOT_FILE_PATH " > ./Visual_html/" DOT_OUTPUT_NAME); //TODO - how to change filename
 
         fprintf_s(out_stream, "\t<img src=\" " DOT_OUTPUT_NAME "\" width=1500/>\n");
     }

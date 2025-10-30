@@ -3,19 +3,19 @@
 #undef FINAL_CODE
 #define FINAL_CODE
 
-errno_t My_list_begin(My_list const *const list_ptr, size_t *const dest) {
+errno_t My_list_head(My_list const *const list_ptr, size_t *const dest) {
     assert(list_ptr); assert(dest);
     ON_DEBUG(
     errno_t verify_err = 0;
     CHECK_FUNC(My_list_verify, list_ptr, &verify_err);
-    assert(!verify_err);
+    assert(!verify_err); //TODO - possible not assert
     )
 
     *dest = list_ptr->buffer[0].next;
     return 0;
 }
 
-errno_t My_list_end(My_list const *const list_ptr, size_t *const dest) {
+errno_t My_list_tail(My_list const *const list_ptr, size_t *const dest) {
     assert(list_ptr); assert(dest);
     ON_DEBUG(
     errno_t verify_err = 0;
@@ -32,7 +32,7 @@ errno_t My_list_reallocate_up(My_list *const list_ptr, size_t const new_capacity
     ON_DEBUG(
     errno_t verify_err = 0;
     CHECK_FUNC(My_list_verify, list_ptr, &verify_err);
-    assert(!verify_err); //TODO - possible not assert
+    assert(!verify_err);
     )
     assert(new_capacity > list_ptr->capacity);
 

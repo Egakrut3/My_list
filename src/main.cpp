@@ -42,6 +42,8 @@ int main(int const argc, char const *const *const argv) {
         My_list_Dtor(&cur_list);    \
         fclose(dump_stream);
 
+    cur_list.buffer[pos1].next = 703;
+    //cur_list.buffer[0].val = 0;
     LIST_VISUAL_DUMP(cur_list, dump_stream, MAIN_CHECK_FUNC);
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");

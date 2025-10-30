@@ -13,8 +13,8 @@ struct My_list_node {
     list_elem_t val;
 };
 
-uint64_t const    LIST_BIT_CANARY = 0XFACE'FACE'FACE'FACE;
-list_elem_t const LIST_CANARY     = *(list_elem_t const *)&LIST_BIT_CANARY;
+//uint64_t const    LIST_BIT_CANARY = 0XFACE'FACE'FACE'FACE;
+list_elem_t const LIST_CANARY     = 666; //TODO -
 
 size_t const LIST_EXPANSION          = 2; static_assert(LIST_EXPANSION > 1);
 size_t const LIST_REDUCTION_CRITERIA = 4; static_assert(LIST_REDUCTION_CRITERIA > 1);
@@ -66,8 +66,8 @@ errno_t My_list_visual_dump(My_list const *list_ptr, FILE *out_stream,
 #define LIST_VISUAL_DUMP(name, out_stream, handler)                                             \
 handler(My_list_visual_dump, &name, out_stream, Position_info{__FILE__, __func__, __LINE__})
 
-errno_t My_list_begin(My_list const *list_ptr, size_t *dest);
-errno_t My_list_end(My_list const *list_ptr, size_t *dest);
+errno_t My_list_head(My_list const *list_ptr, size_t *dest);
+errno_t My_list_tail(My_list const *list_ptr, size_t *dest);
 
 errno_t My_list_reallocate_up(My_list *list_ptr, size_t new_capacity);
 
